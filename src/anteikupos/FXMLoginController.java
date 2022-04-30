@@ -94,6 +94,8 @@ public class FXMLoginController implements Initializable {
                 dialogStage.close();
                 scene = new Scene(FXMLLoader.load(getClass().getResource("FXMLDocument.fxml")));
                 dialogStage.setScene(scene);
+                preparedStatement.close();
+                resultSet.close();
                 dialogStage.show();
             }
         }catch(Exception e){ 
