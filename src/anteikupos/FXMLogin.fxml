@@ -40,7 +40,7 @@
                               <Font name="Sitka Small Bold" size="40.0" />
                            </font>
                         </Label>
-                        <Button fx:id="btnlogin" layoutX="200.0" layoutY="262.0" mnemonicParsing="false" prefHeight="38.0" prefWidth="80.0" text="Log In" />
+                        <Button fx:id="btnlogin" layoutX="200.0" layoutY="262.0" mnemonicParsing="false" onAction="#handleButtonAction" prefHeight="38.0" prefWidth="80.0" text="Log In" />
                      </children>
                   </Pane>
                </children>
