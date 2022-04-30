@@ -15,7 +15,7 @@
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
 
-<AnchorPane id="AnchorPane" prefHeight="673.0" prefWidth="1088.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/17" fx:controller="anteikupos.FXMLDocumentController">
+<AnchorPane id="AnchorPane" prefHeight="673.0" prefWidth="1088.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="anteikupos.FXMLDocumentController">
     <children>
         <Label fx:id="label" layoutX="126" layoutY="120" minHeight="16" minWidth="69" />
       <Pane layoutX="-6.0" layoutY="-1.0" prefHeight="679.0" prefWidth="1121.0" style="-fx-background-color: #009966;">
@@ -145,9 +145,9 @@
                   <Font name="System Bold" size="14.0" />
                </font>
             </Button>
-            <ImageView fitHeight="65.0" fitWidth="62.0" layoutX="790.0" layoutY="8.0">
+            <ImageView fitHeight="65.0" fitWidth="62.0" layoutX="790.0" layoutY="8.0" preserveRatio="true">
                <image>
-                  <Image url="@../../../../../../../anteiku%20cafe%20small.png" />
+                  <Image url="@../../anteiku%20cafe%20small.png" />
                </image>
             </ImageView>
          </children>
