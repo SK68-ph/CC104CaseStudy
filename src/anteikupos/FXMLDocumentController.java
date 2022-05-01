@@ -11,7 +11,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.ResourceBundle;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -64,6 +68,7 @@ public class FXMLDocumentController implements Initializable {
     PreparedStatement preparedStatement = null;
     ResultSet resultSet = null;
     ArrayList<Products> products = new ArrayList<Products>();
+    DateFormat dateFormat = new SimpleDateFormat("YYYY:MM:dd HH:mm:ss");
     
     private void handleButtonAction(ActionEvent event) {
         
@@ -80,8 +85,9 @@ public class FXMLDocumentController implements Initializable {
         prodSize.getSelectionModel().selectFirst();
         // init db
         dbconnect = connection.connectdb();
-        
+        // init Products from db
         LoadProducts();
+        
     }    
     
     private void LoadProducts(){
@@ -98,7 +104,6 @@ public class FXMLDocumentController implements Initializable {
                 products.add(product);
             }
             stmt.close();
-            resultSet.close();
         }catch (Exception e){
             e.printStackTrace(); 
         }
@@ -115,10 +120,12 @@ public class FXMLDocumentController implements Initializable {
         ObservableList<TableViewProduct> data = Prodtbl.getItems();
         data.add(new TableViewProduct(productID,productName,productSize,productQuantity,productTotal));
         
-        txtProdCode.setText("");
-        txtProdName.setText("");
-        txtProdPrice.setText("");
+        txtProdCode.clear();
+        txtProdName.clear();
+        txtProdPrice.clear();
         prodQuantity.getValueFactory().setValue(1);
+        
+        calculateTotal();
     }
     
     int selectedIndex = -1;
@@ -130,19 +137,96 @@ public class FXMLDocumentController implements Initializable {
             selectedIndex = -1;
             Dialog d = new Alert(Alert.AlertType.INFORMATION,"Successfully Updated!");
             d.show();
-            
+            calculateTotal();
         }else{
             Dialog d = new Alert(Alert.AlertType.ERROR,"Please Select an Item from the List");
             d.show();
         }
     }
+    
+    private void calculateTotal(){
+        ObservableList<TableViewProduct> data = Prodtbl.getItems();
+        float total = 0f;
+        for(int i = 0; i < data.size(); i++){
+            total = total + (Float)data.get(i).getProductTotal();
+        }
+        txtTotal.setText(String.valueOf(total));
+    }
+    
+    private void recordBill(int productId, int payment_Type_ID, int order_Quantity){
+        Date today = Calendar.getInstance().getTime();        
+        String dateTimeNow = dateFormat.format(today);
+        String sql = "insert into orders (product_ID,payment_Type_ID,order_Quantity,order_DateTime) VALUES(?,?,?,?)";
+        try{
+            preparedStatement = dbconnect.prepareStatement(sql);
+            preparedStatement.setInt(1, productId);
+            preparedStatement.setInt(2, payment_Type_ID);
+            preparedStatement.setInt(3, order_Quantity);
+            preparedStatement.setString(4, dateTimeNow);
+            preparedStatement.execute();
+            }
+            catch (Exception e){
+                e.printStackTrace(); 
+            }
+    }
+    
+    private String getTransactionID(){
+        try{
+            Statement stmt = dbconnect.createStatement();  
+            resultSet = stmt.executeQuery("SELECT MAX(order_ID) from orders");
+            resultSet.first();
+            String transacId = String.valueOf(resultSet.getInt(1) + 1);
+            System.out.println(transacId);
+            return transacId;
+        }
+        catch (Exception e){
+            e.printStackTrace(); 
+        }
+        return null;
+    }
 
     @FXML
     private void printbill(ActionEvent event) {
+            String total = txtTotal.getText();
+            String pay = txtTenderAmount.getText();
+            String bal = txtChange.getText();
+            ObservableList<TableViewProduct> data = Prodtbl.getItems();
+            
+            txtreceipt.setText(txtreceipt.getText() + "******************************************************\n");
+            txtreceipt.setText(txtreceipt.getText() + "           AnteikuCafe Shop Bill                                     \n");
+            txtreceipt.setText(txtreceipt.getText() + "*******************************************************\n");
+            txtreceipt.setText(txtreceipt.getText() + "Transaction ID : \t" + getTransactionID() + "\n");
+            txtreceipt.setText(txtreceipt.getText() + "Product \t" + "Quantity \t \n");
+            for(int i = 0; i < data.size(); i++){
+                String prodname = (String)data.get(i).getProductName();
+                String quantity = String.valueOf((Integer)data.get(i).getProductQuantity());
+                String amount = String.valueOf((Float)data.get(i).getProductTotal()); 
+                txtreceipt.setText(txtreceipt.getText() + prodname + "\t" + quantity + "\t" + amount  + "\n"  );
+                recordBill(Integer.parseInt(data.get(i).getProductID()),1,data.get(i).getProductQuantity());
+            }
+            txtreceipt.setText(txtreceipt.getText() + "\n");     
+            txtreceipt.setText(txtreceipt.getText() + "\t" + "\t" + "Subtotal :" + total + "\n");
+            txtreceipt.setText(txtreceipt.getText() + "\t" + "\t" + "Tender Amount :" + pay + "\n");
+            txtreceipt.setText(txtreceipt.getText() + "\t" + "\t" + "Change :" + bal + "\n");
+            txtreceipt.setText(txtreceipt.getText() + "\n");
+            txtreceipt.setText(txtreceipt.getText() + "*******************************************************\n");
+            txtreceipt.setText(txtreceipt.getText() + "           THANK YOU COME AGAIN             \n");
+            
+            
+
     }
 
     @FXML
     private void newtransaction(ActionEvent event) {
+        txtProdName.clear();
+        prodQuantity.getValueFactory().setValue(1);
+        txtProdPrice.clear();
+        txtTotal.clear();
+        txtreceipt.clear();
+        txtChange.clear();
+        txtTenderAmount.clear();
+        ObservableList<TableViewProduct> data = Prodtbl.getItems();
+        data.clear();
     }
 
     @FXML
@@ -151,9 +235,9 @@ public class FXMLDocumentController implements Initializable {
     }
     
     private void UpdateItemView(){
-        txtProdName.setText("");
+        txtProdName.clear();
         prodQuantity.getValueFactory().setValue(1);
-        txtProdPrice.setText("");
+        txtProdPrice.clear();
         for (Products i: products) {
             if(i.getProductId().equals(txtProdCode.getText())){
                 txtProdName.setText(i.getProductName());
@@ -184,6 +268,18 @@ public class FXMLDocumentController implements Initializable {
     @FXML
     private void controllerMethod(ActionEvent event) {
         UpdateItemView();
+    }
+    
+
+
+    @FXML
+    private void calculateChange(KeyEvent event) {
+        try{
+            float change = Float.valueOf(txtTenderAmount.getText()) - Float.valueOf(txtTotal.getText());
+            txtChange.setText(String.valueOf(change));
+        }catch (java.lang.NumberFormatException NFE){
+             System.out.println("Invalid Input." + NFE);
+        }
     }
 
     
