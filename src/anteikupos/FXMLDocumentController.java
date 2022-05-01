@@ -132,8 +132,6 @@ public class FXMLDocumentController implements Initializable {
         txtProductName.clear();
         productQuantity.getValueFactory().setValue(1);
         txtProductPrice.clear();
-        
-        
         calculateTotal();
     }
 
@@ -308,6 +306,7 @@ public class FXMLDocumentController implements Initializable {
                 preparedStatement.setFloat(5, Float.parseFloat(itemprice_Large));
                 preparedStatement.execute();
                 infoBox("Done", "Success", null);
+                LoadProducts();
             }
             catch (Exception e){
                 e.printStackTrace(); 
@@ -328,6 +327,7 @@ public class FXMLDocumentController implements Initializable {
                 preparedStatement.setInt(1, Integer.parseInt(productID));
                 preparedStatement.execute();
                 infoBox("Done", "Success", null);
+                LoadProducts();
             }
             catch (Exception e){
                 e.printStackTrace(); 
@@ -354,6 +354,7 @@ public class FXMLDocumentController implements Initializable {
                 preparedStatement.setInt(4, Integer.parseInt(productID));
                 preparedStatement.execute();
                 infoBox("Done", "Success", null);
+                LoadProducts();
             }
             catch (Exception e){
                 e.printStackTrace(); 
