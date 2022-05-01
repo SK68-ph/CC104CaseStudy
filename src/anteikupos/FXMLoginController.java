@@ -43,6 +43,7 @@ public class FXMLoginController implements Initializable {
     Connection dbconnect = null;
     PreparedStatement preparedStatement = null;
     ResultSet resultSet = null;
+    private boolean isAdmin;
 
     public FXMLoginController() {
         dbconnect = connection.connectdb();
@@ -93,6 +94,11 @@ public class FXMLoginController implements Initializable {
                 dialogStage = (Stage) source.getScene().getWindow();
                 dialogStage.close();
                 scene = new Scene(FXMLLoader.load(getClass().getResource("FXMLDocument.fxml")));
+                System.out.println(resultSet.getInt("role"));
+                if(resultSet.getInt("role") <= 2){
+                    isAdmin = true;
+                }
+                dialogStage.setUserData(this.isAdmin);
                 dialogStage.setScene(scene);
                 dialogStage.show();
             }

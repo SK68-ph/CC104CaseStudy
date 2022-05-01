@@ -5,6 +5,7 @@
  */
 package anteikupos;
 
+import static anteikupos.FXMLoginController.infoBox;
 import dbconnection.connection;
 import java.net.URL;
 import java.sql.Connection;
@@ -22,7 +23,9 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
@@ -31,8 +34,10 @@ import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.stage.Stage;
 
 
 /**
@@ -71,6 +76,12 @@ public class FXMLDocumentController implements Initializable {
     
     ArrayList<Products> products = new ArrayList<Products>();
     private int selectedIndex = -1;
+    @FXML
+    private Button btnAddProduct;
+    @FXML
+    private Button btnRemoveProduct;
+    @FXML
+    private Button btnUpdateProduct;
     
     private void LoadProducts(){
         try{
@@ -103,8 +114,9 @@ public class FXMLDocumentController implements Initializable {
         // init db
         dbconnect = connection.connectdb();
         LoadProducts();
+
     }    
-    
+
     @FXML
     private void addItem(ActionEvent event) {
         String productID = txtProductCode.getText();
@@ -268,6 +280,98 @@ public class FXMLDocumentController implements Initializable {
             txtChange.setText(String.valueOf(change));
         }catch(java.lang.NumberFormatException nfe){
             System.out.println("Invalid input" + nfe);
+        }
+    }
+    
+    private String inputBox(String title, String message){
+        TextInputDialog td = new TextInputDialog(message);
+        td.setHeaderText(title);
+        td.showAndWait();
+        return td.getResult();
+    }
+
+    @FXML
+    private void addProduct(ActionEvent event) {
+        String product_Name = inputBox("Enter Product Name","Enter a new product name");
+        String product_Description = inputBox("Enter Product Description","Enter a new product description name");
+        String itemprice_Small = inputBox("Enter Product Price","Enter the product price in small size");
+        String itemprice_Medium = inputBox("Enter Product Price","Enter the product price in medium size");
+        String itemprice_Large = inputBox("Enter Product Price","Enter the product price in large size");
+        if(!product_Name.isEmpty() || !product_Description.isEmpty() || !itemprice_Small.isEmpty() || !itemprice_Medium.isEmpty() || !itemprice_Large.isEmpty()){
+            String sql = "insert into products (product_Name,product_Description,itemprice_Small,itemprice_Medium,itemprice_Large) VALUES(?,?,?,?,?)";
+            try{
+                preparedStatement = dbconnect.prepareStatement(sql);
+                preparedStatement.setString(1, product_Name);
+                preparedStatement.setString(2, product_Description);
+                preparedStatement.setFloat(3, Float.parseFloat(itemprice_Small));
+                preparedStatement.setFloat(4, Float.parseFloat(itemprice_Medium));
+                preparedStatement.setFloat(5, Float.parseFloat(itemprice_Large));
+                preparedStatement.execute();
+                infoBox("Done", "Success", null);
+            }
+            catch (Exception e){
+                e.printStackTrace(); 
+            }
+        }else {
+            infoBox("Please enter correct inputs", "Failed", null);
+        }
+        
+    }
+
+    @FXML
+    private void removeProduct(ActionEvent event) {
+        String productID = inputBox("Enter ID","Enter the product id to remove");
+        if(!productID.isEmpty()){
+            String sql = "DELETE from products where product_ID = ?";
+            try{
+                preparedStatement = dbconnect.prepareStatement(sql);
+                preparedStatement.setInt(1, Integer.parseInt(productID));
+                preparedStatement.execute();
+                infoBox("Done", "Success", null);
+            }
+            catch (Exception e){
+                e.printStackTrace(); 
+            }
+        }else {
+            infoBox("Please enter correct inputs", "Failed", null);
+        }
+    }
+
+    @FXML
+    private void updateProductPrice(ActionEvent event) {
+        
+        String productID = inputBox("Enter ID","Enter the product id to update");
+        String itemprice_Small = inputBox("Enter Product Price","Enter the product price in small size");
+        String itemprice_Medium = inputBox("Enter Product Price","Enter the product price in medium size");
+        String itemprice_Large = inputBox("Enter Product Price","Enter the product price in large size");
+        if(!productID.isEmpty() || !itemprice_Small.isEmpty() || !itemprice_Medium.isEmpty() || !itemprice_Large.isEmpty()){
+            String sql = "UPDATE products SET itemprice_Small = ?, itemprice_Medium = ?, itemprice_Large = ? where product_ID = ?";
+            try{
+                preparedStatement = dbconnect.prepareStatement(sql);
+                preparedStatement.setFloat(1, Float.parseFloat(itemprice_Small));
+                preparedStatement.setFloat(2, Float.parseFloat(itemprice_Medium));
+                preparedStatement.setFloat(3, Float.parseFloat(itemprice_Large));
+                preparedStatement.setInt(4, Integer.parseInt(productID));
+                preparedStatement.execute();
+                infoBox("Done", "Success", null);
+            }
+            catch (Exception e){
+                e.printStackTrace(); 
+            }
+        }else {
+            infoBox("Please enter correct inputs", "Failed", null);
+        }
+    }
+
+    @FXML
+    private void receiveData(MouseEvent event) {
+        Node source = (Node) event.getSource();
+        Stage stage = (Stage) source.getScene().getWindow();
+        boolean isAdmin = (boolean) stage.getUserData();
+        if(isAdmin){
+        btnAddProduct.setDisable(false);
+        btnRemoveProduct.setDisable(false);
+        btnUpdateProduct.setDisable(false);
         }
     }
     
