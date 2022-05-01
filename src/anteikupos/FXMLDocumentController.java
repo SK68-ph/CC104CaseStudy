@@ -201,7 +201,15 @@ public class FXMLDocumentController implements Initializable {
 
     @FXML
     private void newTransaction(ActionEvent event) {
-        
+        txtProductName.clear();
+        productQuantity.getValueFactory().setValue(1);
+        txtProductPrice.clear();
+        txtTotal.clear();
+        txtreceipt.clear();
+        txtChange.clear();
+        txtTenderAmount.clear();
+        ObservableList<TableViewModel> data = Prodtbl.getItems();
+        data.clear();
     }
     
     private void UpdateItemView(){
