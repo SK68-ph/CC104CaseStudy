@@ -282,8 +282,8 @@ public class FXMLDocumentController implements Initializable {
     }
     
     private String inputBox(String title, String message){
-        TextInputDialog td = new TextInputDialog(message);
-        td.setHeaderText(title);
+        TextInputDialog td = new TextInputDialog(title);
+        td.setHeaderText(message);
         td.showAndWait();
         return td.getResult();
     }
