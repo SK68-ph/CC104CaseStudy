@@ -7,6 +7,7 @@ package anteikupos;
 
 import static anteikupos.FXMLoginController.infoBox;
 import dbconnection.connection;
+import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -22,8 +23,10 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
@@ -36,6 +39,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
@@ -47,10 +51,15 @@ import javafx.stage.Stage;
  */
 public class FXMLDocumentController implements Initializable {
     
+    Connection dbconnect = null;
+    PreparedStatement preparedStatement = null;
+    ResultSet resultSet = null;
+    DateFormat dateFormat = new SimpleDateFormat("YYYY:MM:dd HH:mm:ss");
+    ArrayList<Products> products = new ArrayList<Products>();
+    private int selectedIndex = -1;
+    
     @FXML
     private Label label;
-    @FXML
-    private TableView<TableViewModel> Prodtbl;
     @FXML
     private TextField txtProductCode;
     @FXML
@@ -69,22 +78,23 @@ public class FXMLDocumentController implements Initializable {
     private TextField txtTenderAmount;
     @FXML
     private TextField txtChange;
-    
-    Connection dbconnect = null;
-    PreparedStatement preparedStatement = null;
-    ResultSet resultSet = null;
-    DateFormat dateFormat = new SimpleDateFormat("YYYY:MM:dd HH:mm:ss");
-    
-    ArrayList<Products> products = new ArrayList<Products>();
-    private int selectedIndex = -1;
     @FXML
     private Button btnAddProduct;
     @FXML
     private Button btnRemoveProduct;
     @FXML
     private Button btnUpdateProduct;
+    @FXML
+    private TableView<CashierModel> CashierTBL;
+    @FXML
+    private TableView<Products> ProductsTBL;
+    @FXML
+    private Button btnListProduct1;
+    @FXML
+    private ToggleButton toggleShowProducts;
     
-    private void LoadProducts(){
+    private void PopulateProductList(){
+        products.clear();
         try{
             Statement stmt = dbconnect.createStatement();
             resultSet = stmt.executeQuery("select * from products");
@@ -114,8 +124,8 @@ public class FXMLDocumentController implements Initializable {
         productSizes.getSelectionModel().selectFirst();
         // init db
         dbconnect = connection.connectdb();
-        LoadProducts();
-
+        PopulateProductList();
+        PopulateProductTable();
     }    
 
     @FXML
@@ -126,12 +136,13 @@ public class FXMLDocumentController implements Initializable {
         Integer prodQuantity = productQuantity.getValue();
         Float productTotal = Float.parseFloat(txtProductPrice.getText()) * prodQuantity;
         
-        ObservableList<TableViewModel> data = Prodtbl.getItems();
-        data.add(new TableViewModel(productID,productName,productSize,prodQuantity,productTotal));
+        ObservableList<CashierModel> data = CashierTBL.getItems();
+        data.add(new CashierModel(productID,productName,productSize,prodQuantity,productTotal));
         
         txtProductCode.clear();
         txtProductName.clear();
         productQuantity.getValueFactory().setValue(1);
+        productSizes.getSelectionModel().selectFirst();
         txtProductPrice.clear();
         calculateTotal();
     }
@@ -139,7 +150,7 @@ public class FXMLDocumentController implements Initializable {
     @FXML
     private void removeItem(ActionEvent event) {
         if(selectedIndex >= 0){
-            ObservableList<TableViewModel> data = Prodtbl.getItems();
+            ObservableList<CashierModel> data = CashierTBL.getItems();
             data.remove(selectedIndex);
             selectedIndex = -1;
             Dialog d = new Alert(Alert.AlertType.INFORMATION,"Successfully Updated!");
@@ -157,8 +168,6 @@ public class FXMLDocumentController implements Initializable {
         String dateTimeNow = dateFormat.format(today);
         String sqlOrders = "insert into orders(product_ID, payment_Type_ID,order_Quantity,order_DateTime,customer_id) VALUES(?,?,?,?,?)";
         try{
-            
-
             // insert to order table
             preparedStatement = dbconnect.prepareStatement(sqlOrders);
             preparedStatement.setInt(1, productId);
@@ -211,7 +220,7 @@ public class FXMLDocumentController implements Initializable {
             String total = txtTotal.getText();
             String tender = txtTenderAmount.getText();
             String change = txtChange.getText();
-            ObservableList<TableViewModel> data = Prodtbl.getItems();
+            ObservableList<CashierModel> data = CashierTBL.getItems();
             int paymentType = getPaymentType();
             int customer_id = getTransactionID();
             
@@ -245,7 +254,7 @@ public class FXMLDocumentController implements Initializable {
         txtreceipt.clear();
         txtChange.clear();
         txtTenderAmount.clear();
-        ObservableList<TableViewModel> data = Prodtbl.getItems();
+        ObservableList<CashierModel> data = CashierTBL.getItems();
         data.clear();
         productSizes.getSelectionModel().selectFirst();
     }
@@ -287,14 +296,14 @@ public class FXMLDocumentController implements Initializable {
 
     @FXML
     private void updateTableViewIndex(MouseEvent event) {
-        selectedIndex = Prodtbl.getSelectionModel().getSelectedIndex();
+        selectedIndex = CashierTBL.getSelectionModel().getSelectedIndex();
     }
     
     private void calculateTotal(){
-        ObservableList<TableViewModel> data = Prodtbl.getItems();
+        ObservableList<CashierModel> data = CashierTBL.getItems();
         float total = 0f;
-        for(int i =0; i < data.size(); i++){
-            total = total +(Float)data.get(i).getProductTotal();
+        for(CashierModel cm: data){
+            total = total + cm.getProductTotal();
         }
         txtTotal.setText(String.valueOf(total));
     }
@@ -334,7 +343,7 @@ public class FXMLDocumentController implements Initializable {
                 preparedStatement.setFloat(5, Float.parseFloat(itemprice_Large));
                 preparedStatement.execute();
                 infoBox("Done", "Success", null);
-                LoadProducts();
+                PopulateProductTable();
             }
             catch (Exception e){
                 e.printStackTrace(); 
@@ -342,7 +351,6 @@ public class FXMLDocumentController implements Initializable {
         }else {
             infoBox("Please enter correct inputs", "Failed", null);
         }
-        
     }
 
     @FXML
@@ -355,7 +363,7 @@ public class FXMLDocumentController implements Initializable {
                 preparedStatement.setInt(1, Integer.parseInt(productID));
                 preparedStatement.execute();
                 infoBox("Done", "Success", null);
-                LoadProducts();
+                PopulateProductTable();
             }
             catch (Exception e){
                 e.printStackTrace(); 
@@ -367,7 +375,6 @@ public class FXMLDocumentController implements Initializable {
 
     @FXML
     private void updateProductPrice(ActionEvent event) {
-        
         String productID = inputBox("Enter ID","Enter the product id to update");
         String itemprice_Small = inputBox("Enter Product Price","Enter the product price in small size");
         String itemprice_Medium = inputBox("Enter Product Price","Enter the product price in medium size");
@@ -382,7 +389,7 @@ public class FXMLDocumentController implements Initializable {
                 preparedStatement.setInt(4, Integer.parseInt(productID));
                 preparedStatement.execute();
                 infoBox("Done", "Success", null);
-                LoadProducts();
+                PopulateProductTable();
             }
             catch (Exception e){
                 e.printStackTrace(); 
@@ -391,16 +398,63 @@ public class FXMLDocumentController implements Initializable {
             infoBox("Please enter correct inputs", "Failed", null);
         }
     }
-
+    
+    private void PopulateProductTable(){
+        ObservableList<Products> data = ProductsTBL.getItems();
+        data.clear();
+        PopulateProductList();
+        for(Products i: products){
+            data.add(i);
+        }
+    }
+    
+    boolean initdata = false;
     @FXML
     private void receiveData(MouseEvent event) {
+        if(initdata == false){
+            Node source = (Node) event.getSource();
+            Stage stage = (Stage) source.getScene().getWindow();
+            User user = (User) stage.getUserData();
+            switch(user.getUserRole()){
+                case admin:
+                    btnAddProduct.setDisable(false);
+                    btnRemoveProduct.setDisable(false);
+                    btnUpdateProduct.setDisable(false);
+                    toggleShowProducts.setDisable(true);
+                    ProductsTBL.setVisible(true);
+                    break;
+                case manager:
+                    btnUpdateProduct.setDisable(false);
+                    CashierTBL.setVisible(false);
+                    ProductsTBL.setVisible(true);
+                    break;
+                case cashier:
+                    break;
+            }
+            initdata = true;
+            infoBox("Welcome back " + user.getFullname(), "Login Success ", null);
+        }
+    }
+
+
+    @FXML
+    private void logout(ActionEvent event) throws IOException{
         Node source = (Node) event.getSource();
         Stage stage = (Stage) source.getScene().getWindow();
-        boolean isAdmin = (boolean) stage.getUserData();
-        if(isAdmin){
-        btnAddProduct.setDisable(false);
-        btnRemoveProduct.setDisable(false);
-        btnUpdateProduct.setDisable(false);
+        stage.hide();
+        stage.close();
+        Scene scene = new Scene(FXMLLoader.load(getClass().getResource("FXMLogin.fxml")));
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    @FXML
+    private void showProductsTable(ActionEvent event) {
+        if(toggleShowProducts.isSelected()){
+            PopulateProductTable();
+            ProductsTBL.setVisible(true);
+        }else {
+            ProductsTBL.setVisible(false);
         }
     }
     
