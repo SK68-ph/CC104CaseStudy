@@ -152,16 +152,20 @@ public class FXMLDocumentController implements Initializable {
         }
     }
     
-    private void recordBill(int productId, int payment_Type_ID, int order_Quantity){
+    private void recordBill(int productId, int payment_Type_ID, int order_Quantity, int customer_id){
         Date today = Calendar.getInstance().getTime();
         String dateTimeNow = dateFormat.format(today);
-        String sql = "insert into orders(product_ID, payment_Type_ID,order_Quantity,order_DateTime) VALUES(?,?,?,?)";
+        String sqlOrders = "insert into orders(product_ID, payment_Type_ID,order_Quantity,order_DateTime,customer_id) VALUES(?,?,?,?,?)";
         try{
-            preparedStatement = dbconnect.prepareStatement(sql);
+            
+
+            // insert to order table
+            preparedStatement = dbconnect.prepareStatement(sqlOrders);
             preparedStatement.setInt(1, productId);
             preparedStatement.setInt(2, payment_Type_ID);
             preparedStatement.setInt(3, order_Quantity);
             preparedStatement.setString(4, dateTimeNow);
+            preparedStatement.setInt(5, customer_id);
             preparedStatement.execute();
             
         }catch(Exception e){
@@ -169,17 +173,25 @@ public class FXMLDocumentController implements Initializable {
         }
     }
     
-    private String getTransactionID(){
+    private int getTransactionID(){
+        int transactId = 1000;
         try{
             Statement stmt = dbconnect.createStatement();
-            resultSet =stmt.executeQuery("SELECT MAX(order_id) from orders");
-            resultSet.first();
-            String transactId = String.valueOf(resultSet.getInt(1) + 1);
-            return transactId;
+            resultSet = stmt.executeQuery("SELECT MAX(id) from customers");
+            if(resultSet.first()){
+                transactId = resultSet.getInt(1) + 1;
+            }
+            // insert to customer table
+            String sqlCustomer = "insert into customers(id) VALUES(?)";
+            preparedStatement = dbconnect.prepareStatement(sqlCustomer);
+            preparedStatement.setInt(1, transactId);
+            preparedStatement.execute();
+            preparedStatement.clearBatch();
+            preparedStatement.clearParameters();
         }catch(Exception e){
             e.printStackTrace();
         }
-        return null;
+        return transactId;
     }
 
     private int getPaymentType(){
@@ -195,24 +207,25 @@ public class FXMLDocumentController implements Initializable {
     }
 
     @FXML
-    private void printbill(ActionEvent event) {
+    private void printBill(ActionEvent event) {
             String total = txtTotal.getText();
             String tender = txtTenderAmount.getText();
             String change = txtChange.getText();
             ObservableList<TableViewModel> data = Prodtbl.getItems();
             int paymentType = getPaymentType();
+            int customer_id = getTransactionID();
             
             txtreceipt.setText(txtreceipt.getText() + "******************************************************\n");
             txtreceipt.setText(txtreceipt.getText() + "           AnteikuCafe Shop Bill                                     \n");
             txtreceipt.setText(txtreceipt.getText() + "*******************************************************\n");
-            txtreceipt.setText(txtreceipt.getText() + "Transaction ID : \t" + getTransactionID() + "\n");
-            txtreceipt.setText(txtreceipt.getText() + "Product \t" + "Quantity \t \n");
+            txtreceipt.setText(txtreceipt.getText() + "Transaction ID : \t" + customer_id + "\n");
+            txtreceipt.setText(txtreceipt.getText() + "Product \t" + "Quantity \t \t \n");
             for(int i = 0; i < data.size(); i++){
                 String prodname = (String)data.get(i).getProductName();
                 String quantity = String.valueOf((Integer)data.get(i).getProductQuantity());
                 String amount = String.valueOf((Float)data.get(i).getProductTotal()); 
-                txtreceipt.setText(txtreceipt.getText() + prodname + "\t" + quantity + "\t" + amount  + "\n"  );
-                recordBill(Integer.parseInt(data.get(i).getProductID()),paymentType,data.get(i).getProductQuantity());
+                txtreceipt.setText(txtreceipt.getText() + prodname + "\t" + quantity + "\t \t" + amount  + "\n"  );
+                recordBill(Integer.parseInt(data.get(i).getProductID()),paymentType,data.get(i).getProductQuantity(),customer_id);
             }
             txtreceipt.setText(txtreceipt.getText() + "\n");     
             txtreceipt.setText(txtreceipt.getText() + "\t" + "\t" + "Subtotal :" + total + "\n");
@@ -234,6 +247,7 @@ public class FXMLDocumentController implements Initializable {
         txtTenderAmount.clear();
         ObservableList<TableViewModel> data = Prodtbl.getItems();
         data.clear();
+        productSizes.getSelectionModel().selectFirst();
     }
     
     private void UpdateItemView(){
