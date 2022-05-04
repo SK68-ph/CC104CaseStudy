@@ -11,14 +11,14 @@ import javafx.beans.property.SimpleFloatProperty;
  *
  * @author Admin
  */
-public class TableViewModel {
+public class CashierModel {
     private final SimpleStringProperty productID = new SimpleStringProperty("");
     private final SimpleStringProperty productName = new SimpleStringProperty("");
     private final SimpleStringProperty productSize = new SimpleStringProperty("");
     private final SimpleIntegerProperty productQuantity = new SimpleIntegerProperty(0);
     private final SimpleFloatProperty productTotal = new SimpleFloatProperty(0f);
     
-    public TableViewModel(String productID, String productName, String productSize, int productQuantity, float productTotal) {
+    public CashierModel(String productID, String productName, String productSize, int productQuantity, float productTotal) {
         setProductID(productID);
         setProductName(productName);
         setProductSize(productSize);

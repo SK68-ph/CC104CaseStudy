@@ -6,6 +6,7 @@
 package anteikupos;
 
 import dbconnection.connection;
+import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -54,7 +55,7 @@ public class FXMLoginController implements Initializable {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(titleBar);
         alert.setHeaderText(headerMessage);
-        alert.setContentText(titleBar);
+        alert.setContentText(infoMessage);
         alert.showAndWait();
     
     }
@@ -75,32 +76,35 @@ public class FXMLoginController implements Initializable {
         return hashedPass;
     }
     
+    private void initializeMainGUI(User user, ActionEvent event) throws IOException{
+        Node source = (Node) event.getSource();
+        dialogStage = (Stage) source.getScene().getWindow();
+        dialogStage.close();
+        scene = new Scene(FXMLLoader.load(getClass().getResource("FXMLDocument.fxml")));
+        dialogStage.setUserData(user);
+        dialogStage.setScene(scene);
+        dialogStage.show();
+    }
+    
     @FXML
     private void handleButtonAction(ActionEvent event) {
         String username = txtlogin.getText();
         String password = txtpass.getText();
         String hashedPassword = hashPassword(password);
+        User user = new User();
         String sql = "SELECT * FROM users WHERE username = ? and password = ?";
         try{ 
             preparedStatement = dbconnect.prepareStatement(sql);
             preparedStatement.setString(1, username);
             preparedStatement.setString(2, hashedPassword);
             resultSet = preparedStatement.executeQuery();
-            if(!resultSet.next()) { 
-                infoBox("Enter Correct Email and Password", "Failed", null);
+            if(resultSet.first()) { 
+                user.setUsername(resultSet.getString("username"));
+                user.setFullname(resultSet.getString("fullname"));
+                user.setUseRole(resultSet.getInt("role"));
+                initializeMainGUI(user,event);
             } else { 
-                infoBox("Login Successfull", "Success", null);
-                Node source = (Node) event.getSource();
-                dialogStage = (Stage) source.getScene().getWindow();
-                dialogStage.close();
-                scene = new Scene(FXMLLoader.load(getClass().getResource("FXMLDocument.fxml")));
-                System.out.println(resultSet.getInt("role"));
-                if(resultSet.getInt("role") <= 2){
-                    isAdmin = true;
-                }
-                dialogStage.setUserData(this.isAdmin);
-                dialogStage.setScene(scene);
-                dialogStage.show();
+                infoBox("Enter Correct Email and Password", "Failed", null);
             }
         }catch(Exception e){ 
             e.printStackTrace(); 
