@@ -27,6 +27,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
@@ -181,12 +182,25 @@ public class FXMLDocumentController implements Initializable {
         return null;
     }
 
+    private int getPaymentType(){
+            String payments[] = { "Cash", "CreditCard"};
+            ChoiceDialog d = new ChoiceDialog(payments[0],payments[1]);
+            d.showAndWait();
+            if(payments[0].equals(d.getSelectedItem())){
+                return 1;
+            }else if(payments[1].equals(d.getSelectedItem())){
+                return 2;
+            }
+            return 0;
+    }
+
     @FXML
-    private void printBill(ActionEvent event) {
+    private void printbill(ActionEvent event) {
             String total = txtTotal.getText();
-            String pay = txtTenderAmount.getText();
-            String bal = txtChange.getText();
+            String tender = txtTenderAmount.getText();
+            String change = txtChange.getText();
             ObservableList<TableViewModel> data = Prodtbl.getItems();
+            int paymentType = getPaymentType();
             
             txtreceipt.setText(txtreceipt.getText() + "******************************************************\n");
             txtreceipt.setText(txtreceipt.getText() + "           AnteikuCafe Shop Bill                                     \n");
@@ -198,12 +212,12 @@ public class FXMLDocumentController implements Initializable {
                 String quantity = String.valueOf((Integer)data.get(i).getProductQuantity());
                 String amount = String.valueOf((Float)data.get(i).getProductTotal()); 
                 txtreceipt.setText(txtreceipt.getText() + prodname + "\t" + quantity + "\t" + amount  + "\n"  );
-                recordBill(Integer.parseInt(data.get(i).getProductID()),1,data.get(i).getProductQuantity());
+                recordBill(Integer.parseInt(data.get(i).getProductID()),paymentType,data.get(i).getProductQuantity());
             }
             txtreceipt.setText(txtreceipt.getText() + "\n");     
             txtreceipt.setText(txtreceipt.getText() + "\t" + "\t" + "Subtotal :" + total + "\n");
-            txtreceipt.setText(txtreceipt.getText() + "\t" + "\t" + "Tender Amount :" + pay + "\n");
-            txtreceipt.setText(txtreceipt.getText() + "\t" + "\t" + "Change :" + bal + "\n");
+            txtreceipt.setText(txtreceipt.getText() + "\t" + "\t" + "Tender Amount :" + tender + "\n");
+            txtreceipt.setText(txtreceipt.getText() + "\t" + "\t" + "Change :" + change + "\n");
             txtreceipt.setText(txtreceipt.getText() + "\n");
             txtreceipt.setText(txtreceipt.getText() + "*******************************************************\n");
             txtreceipt.setText(txtreceipt.getText() + "           THANK YOU COME AGAIN             \n");
