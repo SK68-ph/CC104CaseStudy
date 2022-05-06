@@ -44,9 +44,6 @@ public class User {
             case 3:
                 this._role = user_role.cashier;
                 break;
-            default:
-                this._role = user_role.cashier;
-                break;
         }
     }
 }
